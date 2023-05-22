@@ -19,6 +19,9 @@ type Context struct {
 	Params map[string]string
 	// response info
 	StatusCode int
+	// middleware
+	handlers []HandlerFunc // 中间件的函数
+	index    int           // handler执行计数器
 }
 
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -27,7 +30,22 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
 	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
+	}
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
 
 func (c *Context) Param(key string) string {
@@ -63,7 +81,7 @@ func (c *Context) JSON(code int, obj interface{}) {
 	c.SetHeader("Content-Type", "application/json")
 	c.Status(code)
 	encoder := json.NewEncoder(c.Writer)
-	if err := encoder.Encode(c.Writer); err != nil {
+	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
 	}
 }
