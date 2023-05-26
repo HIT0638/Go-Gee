@@ -1,4 +1,4 @@
-package Gee_Cache
+package geecache
 
 // A ByteView holds an immutable view of bytes
 type ByteView struct {

@@ -1,4 +1,4 @@
-package Gee_Cache
+package geecache
 
 import (
 	"fmt"
